@@ -170,6 +170,102 @@ int add_employee(struct dbheader_t *dbhdr, struct employee_t *employees, char *a
     return STATUS_SUCCESS;
 }
 
+int delete_employee(struct dbheader_t *dbhdr, struct employee_t *employees, char *name) {
+    if (dbhdr == NULL || employees == NULL || name == NULL) {
+        return STATUS_ERROR;
+    }
+
+    // Find the employee by name
+    int found_idx = -1;
+    for (unsigned short i = 0; i < dbhdr->count; i++) {
+        if (strcmp(employees[i].name, name) == 0) {
+            found_idx = i;
+            break;
+        }
+    }
+
+    if (found_idx == -1) {
+        fprintf(stderr, "Employee not found: %s\n", name);
+        return STATUS_ERROR;
+    }
+
+    // Shift remaining employees down
+    for (unsigned short i = found_idx; i < dbhdr->count - 1; i++) {
+        memcpy(&employees[i], &employees[i + 1], sizeof(struct employee_t));
+    }
+
+    // Clear the last slot and decrement count
+    memset(&employees[dbhdr->count - 1], 0, sizeof(struct employee_t));
+    dbhdr->count--;
+
+    printf("Deleted employee: %s\n", name);
+
+    return STATUS_SUCCESS;
+}
+
+int update_employee(struct dbheader_t *dbhdr, struct employee_t *employees, char *updatestring) {
+    if (dbhdr == NULL || employees == NULL || updatestring == NULL) {
+        return STATUS_ERROR;
+    }
+
+    // Parse updatestring format: "name,new_address,new_hours"
+    // Name is used to find the record, address and hours get updated
+    char *str = strdup(updatestring);
+    if (str == NULL) {
+        perror("strdup");
+        return STATUS_ERROR;
+    }
+
+    // First token: name (lookup key)
+    char *name = strtok(str, ",");
+    if (name == NULL) {
+        fprintf(stderr, "Missing name\n");
+        free(str);
+        return STATUS_ERROR;
+    }
+
+    // Second token: new address
+    char *new_address = strtok(NULL, ",");
+    if (new_address == NULL) {
+        fprintf(stderr, "Missing address\n");
+        free(str);
+        return STATUS_ERROR;
+    }
+
+    // Third token: new hours
+    char *hours_str = strtok(NULL, ",");
+    if (hours_str == NULL) {
+        fprintf(stderr, "Missing hours\n");
+        free(str);
+        return STATUS_ERROR;
+    }
+    unsigned int new_hours = (unsigned int)atoi(hours_str);
+
+    // Find the employee by name
+    int found_idx = -1;
+    for (unsigned short i = 0; i < dbhdr->count; i++) {
+        if (strcmp(employees[i].name, name) == 0) {
+            found_idx = i;
+            break;
+        }
+    }
+
+    if (found_idx == -1) {
+        fprintf(stderr, "Employee not found: %s\n", name);
+        free(str);
+        return STATUS_ERROR;
+    }
+
+    // Update the record
+    strncpy(employees[found_idx].address, new_address, sizeof(employees[found_idx].address) - 1);
+    employees[found_idx].hours = new_hours;
+
+    printf("Updated employee: %s\n", name);
+
+    free(str);
+    return STATUS_SUCCESS;
+}
+
 int output_file(int fd, struct dbheader_t *dbhdr, struct employee_t *employees) {
     if (fd < 0 || dbhdr == NULL) {
         return STATUS_ERROR;
@@ -182,6 +278,12 @@ int output_file(int fd, struct dbheader_t *dbhdr, struct employee_t *employees) 
     // Seek to beginning
     if (lseek(fd, 0, SEEK_SET) == -1) {
         perror("lseek");
+        return STATUS_ERROR;
+    }
+
+    // Truncate file to new size (important for delete)
+    if (ftruncate(fd, dbhdr->filesize) == -1) {
+        perror("ftruncate");
         return STATUS_ERROR;
     }
 

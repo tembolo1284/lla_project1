@@ -22,9 +22,9 @@ void print_usage(char *argv[]) {
     printf("\nActions:\n");
     printf("  -n              Create new database file\n");
     printf("  -l              List all employees\n");
-    printf("  -a <spec>       Add employee (e.g. \"name=John,address=123 Main,hours=40\")\n");
-    printf("  -d <key>        Delete employee by key\n");
-    printf("  -u <spec>       Update employee\n");
+    printf("  -a <spec>       Add employee (e.g. \"Name,Address,Hours\")\n");
+    printf("  -d <name>       Delete employee by name\n");
+    printf("  -u <spec>       Update employee (e.g. \"Name,NewAddress,NewHours\")\n");
     printf("\nOther:\n");
     printf("  -h              Show this help\n");
 }
@@ -38,7 +38,7 @@ static int set_action(action_t *dst, action_t a) {
 int main(int argc, char *argv[]) {
     char *filepath = NULL;
     char *add_spec = NULL;
-    char *del_key = NULL;
+    char *del_name = NULL;
     char *upd_spec = NULL;
     action_t action = ACT_NONE;
 
@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
                     fprintf(stderr, "Error: only one action allowed (-n/-l/-a/-d/-u)\n");
                     return STATUS_ERROR;
                 }
-                del_key = optarg;
+                del_name = optarg;
                 break;
 
             case 'u':
@@ -138,8 +138,6 @@ int main(int argc, char *argv[]) {
                 fprintf(stderr, "Error: failed to create database header\n");
                 return STATUS_ERROR;
             }
- 
-            // Write the header to disk BOOM!
             if (output_file(dbfd, dbhdr, NULL) == STATUS_ERROR) {
                 fprintf(stderr, "Error: failed to write database header\n");
                 return STATUS_ERROR;
@@ -189,13 +187,51 @@ int main(int argc, char *argv[]) {
             break;
 
         case ACT_DEL:
-            // TODO: implement delete
-            printf("Delete not yet implemented: %s\n", del_key);
+            dbfd = open_db_file(filepath);
+            if (dbfd == STATUS_ERROR) {
+                fprintf(stderr, "Error: failed to open database file\n");
+                return STATUS_ERROR;
+            }
+            if (validate_db_header(dbfd, &dbhdr) == STATUS_ERROR) {
+                fprintf(stderr, "Error: invalid database header\n");
+                return STATUS_ERROR;
+            }
+            if (read_employees(dbfd, dbhdr, &employees) == STATUS_ERROR) {
+                fprintf(stderr, "Error: failed to read employees\n");
+                return STATUS_ERROR;
+            }
+            if (delete_employee(dbhdr, employees, del_name) == STATUS_ERROR) {
+                fprintf(stderr, "Error: failed to delete employee\n");
+                return STATUS_ERROR;
+            }
+            if (output_file(dbfd, dbhdr, employees) == STATUS_ERROR) {
+                fprintf(stderr, "Error: failed to write database\n");
+                return STATUS_ERROR;
+            }
             break;
 
         case ACT_UPDATE:
-            // TODO: implement update
-            printf("Update not yet implemented: %s\n", upd_spec);
+            dbfd = open_db_file(filepath);
+            if (dbfd == STATUS_ERROR) {
+                fprintf(stderr, "Error: failed to open database file\n");
+                return STATUS_ERROR;
+            }
+            if (validate_db_header(dbfd, &dbhdr) == STATUS_ERROR) {
+                fprintf(stderr, "Error: invalid database header\n");
+                return STATUS_ERROR;
+            }
+            if (read_employees(dbfd, dbhdr, &employees) == STATUS_ERROR) {
+                fprintf(stderr, "Error: failed to read employees\n");
+                return STATUS_ERROR;
+            }
+            if (update_employee(dbhdr, employees, upd_spec) == STATUS_ERROR) {
+                fprintf(stderr, "Error: failed to update employee\n");
+                return STATUS_ERROR;
+            }
+            if (output_file(dbfd, dbhdr, employees) == STATUS_ERROR) {
+                fprintf(stderr, "Error: failed to write database\n");
+                return STATUS_ERROR;
+            }
             break;
 
         default:
