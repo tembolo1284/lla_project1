@@ -1,3 +1,5 @@
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -9,7 +11,7 @@
 #include "common.h"
 #include "parse.h"
 
-int create_db_header(int fd, struct dbheader_t **headerOut) {
+int create_db_header(struct dbheader_t **headerOut) {
     struct dbheader_t *hdr = calloc(1, sizeof(struct dbheader_t));
     if (hdr == NULL) {
         perror("calloc");

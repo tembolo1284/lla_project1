@@ -1,3 +1,5 @@
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -134,7 +136,7 @@ int main(int argc, char *argv[]) {
                 fprintf(stderr, "Error: failed to create database file\n");
                 return STATUS_ERROR;
             }
-            if (create_db_header(dbfd, &dbhdr) == STATUS_ERROR) {
+            if (create_db_header(&dbhdr) == STATUS_ERROR) {
                 fprintf(stderr, "Error: failed to create database header\n");
                 return STATUS_ERROR;
             }
