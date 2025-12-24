@@ -125,7 +125,7 @@ int add_employee(struct dbheader_t *dbhdr, struct employee_t *employees, char *a
         return STATUS_ERROR;
     }
 
-    // Parse addstring format: "name=John,address=123 Main St,hours=40"
+    // Parse addstring format: "name,address,hours"
     char *str = strdup(addstring);
     if (str == NULL) {
         perror("strdup");
@@ -135,41 +135,34 @@ int add_employee(struct dbheader_t *dbhdr, struct employee_t *employees, char *a
     struct employee_t *new_emp = &employees[dbhdr->count];
     memset(new_emp, 0, sizeof(struct employee_t));
 
+    // First token: name
     char *token = strtok(str, ",");
-    while (token != NULL) {
-        char *eq = strchr(token, '=');
-        if (eq == NULL) {
-            fprintf(stderr, "Invalid format: %s (expected key=value)\n", token);
-            free(str);
-            return STATUS_ERROR;
-        }
-
-        *eq = '\0';
-        char *key = token;
-        char *value = eq + 1;
-
-        if (strcmp(key, "name") == 0) {
-            strncpy(new_emp->name, value, sizeof(new_emp->name) - 1);
-        } else if (strcmp(key, "address") == 0) {
-            strncpy(new_emp->address, value, sizeof(new_emp->address) - 1);
-        } else if (strcmp(key, "hours") == 0) {
-            new_emp->hours = (unsigned int)atoi(value);
-        } else {
-            fprintf(stderr, "Unknown field: %s\n", key);
-            free(str);
-            return STATUS_ERROR;
-        }
-
-        token = strtok(NULL, ",");
-    }
-
-    free(str);
-
-    // Validate required fields
-    if (strlen(new_emp->name) == 0) {
-        fprintf(stderr, "Name is required\n");
+    if (token == NULL) {
+        fprintf(stderr, "Missing name\n");
+        free(str);
         return STATUS_ERROR;
     }
+    strncpy(new_emp->name, token, sizeof(new_emp->name) - 1);
+
+    // Second token: address
+    token = strtok(NULL, ",");
+    if (token == NULL) {
+        fprintf(stderr, "Missing address\n");
+        free(str);
+        return STATUS_ERROR;
+    }
+    strncpy(new_emp->address, token, sizeof(new_emp->address) - 1);
+
+    // Third token: hours
+    token = strtok(NULL, ",");
+    if (token == NULL) {
+        fprintf(stderr, "Missing hours\n");
+        free(str);
+        return STATUS_ERROR;
+    }
+    new_emp->hours = (unsigned int)atoi(token);
+
+    free(str);
 
     dbhdr->count++;
     printf("Added employee: %s\n", new_emp->name);
@@ -205,7 +198,7 @@ int output_file(int fd, struct dbheader_t *dbhdr, struct employee_t *employees) 
         return STATUS_ERROR;
     }
 
-    // Write employees (but skip if NULL or count == 0)
+    // Write employees (skip if NULL or count is 0)
     if (employees != NULL) {
         for (unsigned short i = 0; i < dbhdr->count; i++) {
             struct employee_t emp_out;

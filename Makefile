@@ -1,6 +1,7 @@
 TARGET = bin/dbview
 SRC = $(wildcard src/*.c)
 OBJ = $(patsubst src/%.c, obj/%.o, $(SRC))
+DB = ./mynewdb.db
 
 run: clean default
 	./$(TARGET) -f ./mynewdb.db -n
@@ -19,6 +20,9 @@ $(TARGET): $(OBJ)
 obj/%.o : src/%.c
 	gcc -c $< -o $@ -Iinclude
 
+list:
+	./$(TARGET) -f $(DB) -l
+
 help:
 	@echo "Usage: make [target]"
 	@echo ""
@@ -26,4 +30,5 @@ help:
 	@echo "  default   Build the dbview binary"
 	@echo "  clean     Remove object files, binaries, and .db files"
 	@echo "  run       Clean, build, then create a test db and add a record"
+	@echo "  list      List all employees in the database"
 	@echo "  help      Show this help message"
