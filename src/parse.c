@@ -144,7 +144,7 @@ int add_employee(struct dbheader_t *dbhdr, struct employee_t *employees, char *a
         free(str);
         return STATUS_ERROR;
     }
-    strncpy(new_emp->name, token, sizeof(new_emp->name) - 1);
+    strncpy(new_emp->name, token, NAME_LEN - 1);
 
     // Second token: address
     token = strtok(NULL, ",");
@@ -153,7 +153,7 @@ int add_employee(struct dbheader_t *dbhdr, struct employee_t *employees, char *a
         free(str);
         return STATUS_ERROR;
     }
-    strncpy(new_emp->address, token, sizeof(new_emp->address) - 1);
+    strncpy(new_emp->address, token, ADDRESS_LEN - 1);
 
     // Third token: hours
     token = strtok(NULL, ",");
@@ -259,7 +259,7 @@ int update_employee(struct dbheader_t *dbhdr, struct employee_t *employees, char
     }
 
     // Update the record
-    strncpy(employees[found_idx].address, new_address, sizeof(employees[found_idx].address) - 1);
+    strncpy(employees[found_idx].address, new_address, ADDRESS_LEN - 1);
     employees[found_idx].hours = new_hours;
 
     printf("Updated employee: %s\n", name);
